@@ -1,0 +1,101 @@
+Accessorial Recommendation Agent – POC Build
+Context
+FreightPOP is a SaaS Transportation Management System (TMS).
+When users create LTL shipments, they must select accessorials such as:
+Liftgate
+Residential Delivery
+Limited Access
+These are frequently missed at shipment creation time.
+When carriers later invoice these accessorials:
+The shipper absorbs unexpected cost
+Or rebills customers months later (poor experience)
+This leads to margin erosion, invoice disputes, and customer dissatisfaction.
+The Assignment
+You are the AI Product Manager responsible for designing and delivering a lightweight Proof of Concept (POC) for an Accessorial Recommendation Agent.
+Your solution must:
+Accept shipment inputs (address, shipment type, package type, etc.)
+Return:
+Suggested accessorial(s)
+Confidence score
+Short explanation
+Include guardrails
+Include an evaluation framework
+Be cost-aware and performance-aware
+Be safe for incremental rollout
+This is not a slide deck exercise.
+You must build a working prototype.
+What You Must Deliver
+1. Working POC
+Provide access to a functioning prototype. This can be:
+A simple web app
+A lightweight API service
+A local app with runnable instructions
+A Loom demo environment
+Or equivalent
+The POC should demonstrate:
+Input of shipment data
+Agent execution
+Structured output:
+Suggested accessorials
+Confidence score
+Explanation
+Guardrail behavior (timeouts, low confidence handling, etc.)
+It does not need production polish.
+It must demonstrate real reasoning logic.
+2. 5-10 Minute Video Walkthrough
+Record a video explaining:
+The problem framing
+The agent design
+Why you chose this approach
+Guardrails you implemented
+Evaluation framework
+Known weaknesses
+How you would productionize it
+You should walk through the actual working prototype.
+Clarity of thinking matters more than UI polish.
+What We Expect You to Address
+What We Expect You to Address
+1. Problem Framing
+What hypotheses are you testing?
+What signals are predictive?
+What does success look like?
+What tradeoffs did you make?
+2. Agent Design
+What inputs did you use?
+What architecture did you choose? (rules, LLM, hybrid, etc.)
+When does the agent trigger?
+When does it NOT trigger?
+How does it produce confidence?
+3. Guardrails (Critical)
+Show implemented guardrails for:
+Performance
+Max latency?
+Blocking vs non-blocking behavior?
+Timeout logic?
+Cost
+How do you prevent runaway usage?
+When does AI trigger vs not trigger?
+Safety
+How do you prevent hallucinated suggestions?
+How do you handle low-confidence output?
+When does the system refuse to decide?
+4. Evaluation Framework (Most Important)
+Demonstrate how you would evaluate this POC:
+Offline
+What test dataset did you use?
+How did you measure precision/recall?
+What failure types did you observe?
+Online
+How would you A/B test this?
+What leading metrics matter?
+What lagging metrics matter?
+Human-in-the-loop
+How do overrides improve the system?
+How would you log predictions vs actual outcomes?
+5. Rollout Strategy
+How would you release this safely?
+What confidence threshold is required before auto-apply?
+What are your kill criteria?
+What could go wrong?
+
+

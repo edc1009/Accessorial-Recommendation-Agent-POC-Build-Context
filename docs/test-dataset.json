@@ -1,0 +1,756 @@
+[
+  {
+    "test_id": "TC-001",
+    "category": "clear_residential_heavy",
+    "description": "Heavy loose freight to residential, no dock",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "home",
+      "package_type": "loose",
+      "total_weight_lbs": 450,
+      "handling_units": 2,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Pasadena",
+        "state": "CA",
+        "zip": "91101"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery",
+        "liftgate"
+      ],
+      "liftgate_confidence_min": 0.55,
+      "residential_confidence_min": 0.95
+    },
+    "rationale": "Residential fires at 0.95. Liftgate score: dockNo(+0.35) + loose≥150(+0.15) + residential+weight≥100(+0.08) + residential(+0.05) + forkliftUnknown(-0.08) = 0.55. Fires at threshold."
+  },
+  {
+    "test_id": "TC-002",
+    "category": "clear_residential_heavy",
+    "description": "Palletized shipment to apartment, no dock",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "apartment",
+      "package_type": "palletized",
+      "total_weight_lbs": 600,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Brooklyn",
+        "state": "NY",
+        "zip": "11201"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery",
+        "liftgate"
+      ],
+      "liftgate_confidence_min": 0.55,
+      "residential_confidence_min": 0.95
+    },
+    "rationale": "Residential fires at 0.95. Liftgate score: dockNo(+0.35) + palletized≥500(+0.15) + residential+weight≥100(+0.08) + residential(+0.05) + forkliftUnknown(-0.08) = 0.55."
+  },
+  {
+    "test_id": "TC-003",
+    "category": "clear_residential_heavy",
+    "description": "Heavy loose freight to residential, dock unknown",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "home",
+      "package_type": "loose",
+      "total_weight_lbs": 350,
+      "handling_units": 2,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Austin",
+        "state": "TX",
+        "zip": "78701"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery"
+      ],
+      "residential_confidence_min": 0.95
+    },
+    "rationale": "Residential fires at 0.95. Liftgate score: loose≥150(+0.15) + residential+weight≥100(+0.08) + residential(+0.05) + dockUnknown(-0.08) + forkliftUnknown(-0.08) = 0.12. Below 0.55 threshold, does not fire. Advisory generated internally but not a recommendation."
+  },
+  {
+    "test_id": "TC-004",
+    "category": "clear_residential_heavy",
+    "description": "Moderate weight residential, no dock, multiple units",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "home",
+      "package_type": "loose",
+      "total_weight_lbs": 200,
+      "handling_units": 4,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Denver",
+        "state": "CO",
+        "zip": "80202"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery",
+        "liftgate"
+      ],
+      "liftgate_confidence_min": 0.55,
+      "residential_confidence_min": 0.95
+    },
+    "rationale": "Residential fires at 0.95. Liftgate score: dockNo(+0.35) + loose≥150(+0.15) + residential+weight≥100(+0.08) + residential(+0.05) + forkliftUnknown(-0.08) = 0.55. Fires. Multiple HU to residential generates a delivery_complexity advisory, but limited_access is NOT recommended — that requires location signals, not just HU count."
+  },
+  {
+    "test_id": "TC-005",
+    "category": "clear_commercial_dock",
+    "description": "Standard commercial warehouse with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "warehouse",
+      "package_type": "palletized",
+      "total_weight_lbs": 1200,
+      "handling_units": 2,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Ontario",
+        "state": "CA",
+        "zip": "91761"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial warehouse with dock. Liftgate score: palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.07. No fire."
+  },
+  {
+    "test_id": "TC-006",
+    "category": "clear_commercial_dock",
+    "description": "Light commercial to retail store with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "loose",
+      "total_weight_lbs": 80,
+      "handling_units": 1,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Dallas",
+        "state": "TX",
+        "zip": "75201"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Under all weight thresholds (loose < 150 lbs), commercial, dock available. No accessorials."
+  },
+  {
+    "test_id": "TC-007",
+    "category": "clear_commercial_dock",
+    "description": "Heavy palletized to commercial warehouse with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "warehouse",
+      "package_type": "palletized",
+      "total_weight_lbs": 2000,
+      "handling_units": 4,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Memphis",
+        "state": "TN",
+        "zip": "38118"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Even very heavy, dock + warehouse = no accessorials. Liftgate score stays low without dockNo signal."
+  },
+  {
+    "test_id": "TC-008",
+    "category": "clear_commercial_dock",
+    "description": "Crated shipment to commercial with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "warehouse",
+      "package_type": "crated",
+      "total_weight_lbs": 750,
+      "handling_units": 1,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Chicago",
+        "state": "IL",
+        "zip": "60601"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Crated treated as palletized. Commercial, dock available. No accessorials."
+  },
+  {
+    "test_id": "TC-009",
+    "category": "limited_access",
+    "description": "Delivery to a school",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "school",
+      "package_type": "palletized",
+      "total_weight_lbs": 400,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Phoenix",
+        "state": "AZ",
+        "zip": "85001"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "School is in LIMITED_ACCESS_LOCATION_TYPES, base score 0.82. No additional signals. Liftgate: dockNo(+0.35) + palletized 400<500(0) + forkliftUnknown(-0.08) = 0.27, below 0.55 threshold."
+  },
+  {
+    "test_id": "TC-010",
+    "category": "limited_access",
+    "description": "Heavy delivery to construction site",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "construction_site",
+      "package_type": "palletized",
+      "total_weight_lbs": 800,
+      "handling_units": 2,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Houston",
+        "state": "TX",
+        "zip": "77001"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Construction site is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. Liftgate: dockNo(+0.35) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.42, below 0.55 threshold. Without confirmed forklift_available=no, liftgate does not reach recommendation threshold."
+  },
+  {
+    "test_id": "TC-011",
+    "category": "limited_access",
+    "description": "Delivery to a church, light shipment",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "church",
+      "package_type": "loose",
+      "total_weight_lbs": 50,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Nashville",
+        "state": "TN",
+        "zip": "37201"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Church is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. 50 lbs loose is hand-carryable, liftgate score: dockNo(+0.35) + loose<150(0) + forkliftUnknown(-0.08) = 0.27. No liftgate."
+  },
+  {
+    "test_id": "TC-012",
+    "category": "limited_access",
+    "description": "Delivery to a mall",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "mall",
+      "package_type": "palletized",
+      "total_weight_lbs": 300,
+      "handling_units": 1,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Los Angeles",
+        "state": "CA",
+        "zip": "90015"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Mall is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. Liftgate: dockUnknown(-0.08) + palletized<500(0) + forkliftUnknown(-0.08) = -0.16. No liftgate."
+  },
+  {
+    "test_id": "TC-013",
+    "category": "heavy_loose_no_dock",
+    "description": "Heavy loose to commercial, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "loose",
+      "total_weight_lbs": 500,
+      "handling_units": 3,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Atlanta",
+        "state": "GA",
+        "zip": "30301"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial retail, not residential, not limited access. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. Without forklift_available=no, score insufficient. No accessorials."
+  },
+  {
+    "test_id": "TC-014",
+    "category": "heavy_loose_no_dock",
+    "description": "Very heavy palletized to commercial, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "palletized",
+      "total_weight_lbs": 900,
+      "handling_units": 2,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Seattle",
+        "state": "WA",
+        "zip": "98101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial retail. Liftgate: dockNo(+0.35) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. Liftgate requires confirmation of forklift unavailability to cross threshold."
+  },
+  {
+    "test_id": "TC-015",
+    "category": "heavy_loose_no_dock",
+    "description": "Heavy loose to commercial, dock unknown",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "loose",
+      "total_weight_lbs": 400,
+      "handling_units": 2,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Portland",
+        "state": "OR",
+        "zip": "97201"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial retail, dock unknown. Liftgate: dockUnknown(-0.08) + loose≥150(+0.15) + forkliftUnknown(-0.08) = -0.01. No fire. Missing dock AND forklift info yields insufficient signal."
+  },
+  {
+    "test_id": "TC-016",
+    "category": "heavy_loose_no_dock",
+    "description": "Heavy crated to commercial, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "crated",
+      "total_weight_lbs": 700,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Miami",
+        "state": "FL",
+        "zip": "33101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Crated treated as palletized. Liftgate: dockNo(+0.35) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold."
+  },
+  {
+    "test_id": "TC-017",
+    "category": "borderline_weight",
+    "description": "Loose freight at exactly 300 lbs, no dock, commercial",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "loose",
+      "total_weight_lbs": 300,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "San Diego",
+        "state": "CA",
+        "zip": "92101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "300 lbs loose, no dock, commercial. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. Commercial with unknown forklift is insufficient to recommend."
+  },
+  {
+    "test_id": "TC-018",
+    "category": "borderline_weight",
+    "description": "Loose freight at 290 lbs, no dock, commercial",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "loose",
+      "total_weight_lbs": 290,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "San Jose",
+        "state": "CA",
+        "zip": "95101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "290 lbs loose, no dock. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + forkliftUnknown(-0.08) = 0.42. No fire."
+  },
+  {
+    "test_id": "TC-019",
+    "category": "borderline_weight",
+    "description": "Palletized at exactly 500 lbs, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "palletized",
+      "total_weight_lbs": 500,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Philadelphia",
+        "state": "PA",
+        "zip": "19101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "500 lbs palletized, no dock, commercial. Liftgate: dockNo(+0.35) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. Requires forklift signal to cross."
+  },
+  {
+    "test_id": "TC-020",
+    "category": "borderline_weight",
+    "description": "Palletized at 490 lbs, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "palletized",
+      "total_weight_lbs": 490,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Columbus",
+        "state": "OH",
+        "zip": "43201"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "490 lbs palletized, no dock. Liftgate: dockNo(+0.35) + palletized<500(0) + forkliftUnknown(-0.08) = 0.27. No fire."
+  },
+  {
+    "test_id": "TC-021",
+    "category": "unknown_missing_fields",
+    "description": "Unknown consignee, unknown dock, moderate weight",
+    "input": {
+      "consignee_type": "unknown",
+      "location_type": "other",
+      "package_type": "loose",
+      "total_weight_lbs": 400,
+      "handling_units": 1,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Las Vegas",
+        "state": "NV",
+        "zip": "89101"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Unknown consignee and location. Not residential, not limited access. Liftgate: dockUnknown(-0.08) + loose≥150(+0.15) + forkliftUnknown(-0.08) = -0.01. System correctly refuses to recommend without sufficient signal."
+  },
+  {
+    "test_id": "TC-022",
+    "category": "unknown_missing_fields",
+    "description": "Unknown everything, light shipment",
+    "input": {
+      "consignee_type": "unknown",
+      "location_type": "other",
+      "package_type": "loose",
+      "total_weight_lbs": 50,
+      "handling_units": 1,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Reno",
+        "state": "NV",
+        "zip": "89501"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "All signals unknown + light weight. No rules should fire. System does not guess."
+  },
+  {
+    "test_id": "TC-023",
+    "category": "unknown_missing_fields",
+    "description": "Missing weight field",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "home",
+      "package_type": "loose",
+      "total_weight_lbs": null,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Tucson",
+        "state": "AZ",
+        "zip": "85701"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery"
+      ],
+      "residential_confidence_min": 0.95
+    },
+    "rationale": "Residential rule fires regardless of weight. hasWeight=false so all liftgate weight bonuses skip. Liftgate score: dockNo(+0.35) + residential(+0.05) + forkliftUnknown(-0.08) = 0.32, below 0.55. No liftgate."
+  },
+  {
+    "test_id": "TC-024",
+    "category": "unknown_missing_fields",
+    "description": "Commercial unknown dock, heavy palletized",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "other",
+      "package_type": "palletized",
+      "total_weight_lbs": 600,
+      "handling_units": 1,
+      "dock_available": "unknown",
+      "destination_address": {
+        "city": "Sacramento",
+        "state": "CA",
+        "zip": "95814"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial, dock unknown. Liftgate: dockUnknown(-0.08) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = -0.01. Insufficient signal without dock or forklift confirmation."
+  },
+  {
+    "test_id": "TC-025",
+    "category": "multi_accessorial_stacking",
+    "description": "Residential + liftgate + multiple handling units",
+    "input": {
+      "consignee_type": "residential",
+      "location_type": "home",
+      "package_type": "loose",
+      "total_weight_lbs": 500,
+      "handling_units": 5,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Orlando",
+        "state": "FL",
+        "zip": "32801"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "residential_delivery",
+        "liftgate"
+      ],
+      "residential_confidence_min": 0.95,
+      "liftgate_confidence_min": 0.55
+    },
+    "rationale": "Residential fires at 0.95. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + residential+weight≥100(+0.08) + residential(+0.05) + forkliftUnknown(-0.08) = 0.55. Fires. 5 HU generates delivery_complexity advisory only — limited_access is NOT recommended because multiple HU alone is not a location-based access restriction."
+  },
+  {
+    "test_id": "TC-026",
+    "category": "multi_accessorial_stacking",
+    "description": "Hospital + heavy palletized, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "hospital",
+      "package_type": "palletized",
+      "total_weight_lbs": 1000,
+      "handling_units": 3,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Boston",
+        "state": "MA",
+        "zip": "02101"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Hospital is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. Liftgate: dockNo(+0.35) + palletized≥500(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. Without forklift_available=no, liftgate does not fire."
+  },
+  {
+    "test_id": "TC-027",
+    "category": "multi_accessorial_stacking",
+    "description": "Government building + heavy loose, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "government_building",
+      "package_type": "loose",
+      "total_weight_lbs": 350,
+      "handling_units": 2,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Washington",
+        "state": "DC",
+        "zip": "20001"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Government building is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold."
+  },
+  {
+    "test_id": "TC-028",
+    "category": "no_accessorial_needed",
+    "description": "Light palletized to commercial with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "warehouse",
+      "package_type": "palletized",
+      "total_weight_lbs": 200,
+      "handling_units": 1,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Indianapolis",
+        "state": "IN",
+        "zip": "46201"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Light, commercial, warehouse, dock. Zero accessorials."
+  },
+  {
+    "test_id": "TC-029",
+    "category": "no_accessorial_needed",
+    "description": "Medium weight crated to commercial with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "retail_store",
+      "package_type": "crated",
+      "total_weight_lbs": 450,
+      "handling_units": 1,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Minneapolis",
+        "state": "MN",
+        "zip": "55401"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Commercial, has dock, crated. No triggers."
+  },
+  {
+    "test_id": "TC-030",
+    "category": "no_accessorial_needed",
+    "description": "Light loose to commercial with dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "warehouse",
+      "package_type": "loose",
+      "total_weight_lbs": 60,
+      "handling_units": 1,
+      "dock_available": "yes",
+      "destination_address": {
+        "city": "Charlotte",
+        "state": "NC",
+        "zip": "28201"
+      }
+    },
+    "expected": {
+      "accessorials": []
+    },
+    "rationale": "Very light, commercial, dock. No accessorials."
+  },
+  {
+    "test_id": "TC-031",
+    "category": "limited_access",
+    "description": "Delivery to a storage unit, heavy loose, no dock",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "storage_unit",
+      "package_type": "loose",
+      "total_weight_lbs": 400,
+      "handling_units": 2,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Tampa",
+        "state": "FL",
+        "zip": "33601"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Storage unit is in LIMITED_ACCESS_LOCATION_TYPES, score 0.82. Liftgate: dockNo(+0.35) + loose≥150(+0.15) + forkliftUnknown(-0.08) = 0.42. Below 0.55 threshold. No liftgate without forklift confirmation."
+  },
+  {
+    "test_id": "TC-032",
+    "category": "limited_access",
+    "description": "Light delivery to a self storage facility",
+    "input": {
+      "consignee_type": "commercial",
+      "location_type": "storage_unit",
+      "package_type": "loose",
+      "total_weight_lbs": 30,
+      "handling_units": 1,
+      "dock_available": "no",
+      "destination_address": {
+        "city": "Scottsdale",
+        "state": "AZ",
+        "zip": "85251"
+      }
+    },
+    "expected": {
+      "accessorials": [
+        "limited_access"
+      ],
+      "limited_access_confidence_min": 0.82
+    },
+    "rationale": "Storage unit = limited access regardless of weight. Light freight, no liftgate needed."
+  }
+]

@@ -1,248 +1,237 @@
 AI Eval Template
-1. 基本資訊
+1. Basic Information
 
-產品名稱：
-功能名稱：
-版本號：
-Owner：
-日期：
-狀態： Draft / In Review / Approved / Blocked
+Product Name:
+Feature Name:
+Version:
+Owner:
+Date:
+Status: Draft / In Review / Approved / Blocked
 
-2. 這次要評什麼
+2. What Are We Evaluating
 
-評測對象：
+Evaluation Target:
 
- 模型
+☐ Model
+☐ Prompt
+☐ RAG
+☐ Workflow
+☐ Agent
+☐ Overall AI Experience
+☐ Live Version Regression
 
- Prompt
+Evaluation Scope:
+Describe what this eval includes and explicitly excludes.
 
- RAG
+Task Description:
+One sentence describing what the AI is doing for the user.
 
- Workflow
-
- Agent
-
- 整體 AI 體驗
-
- 線上版本回歸
-
-評測範圍：
-填寫這次 eval 包含什麼，不包含什麼。
-
-任務描述：
-一句話說清楚 AI 在替用戶完成什麼工作。
-
-目標用戶：
-關鍵場景：
+Target Users:
+Key Scenarios:
 1.
 2.
 3.
 
-不能犯的錯：
+Errors We Cannot Tolerate:
 1.
 2.
 3.
 
-3. 成功定義
+3. Definition of Success
 
-北極星指標：
-北極星指標公式：
-為什麼它代表用戶價值：
+North Star Metric:
+North Star Metric Formula:
+Why it represents user value:
 
-本次發布目標：
+Release Goals for This Version:
 
-效果目標：
+Effectiveness Goals:
 
-體驗目標：
+Experience Goals:
 
-性能目標：
+Performance Goals:
 
-成本目標：
+Cost Goals:
 
-4. 指標表
-指標名稱	類型	定義/公式	數據來源	評測方式	目標值	紅線	Owner
-Accuracy	效果-定量	正確數 / 總數	Eval set	自動/人工			
-Relevance	體驗-定性	1~5 分平均	抽樣對話	LLM Judge + 人工			
-Completeness	體驗-定性	1~5 分平均	抽樣對話	LLM Judge + 人工			
-Hallucination Rate	風險-定量	幻覺案例 / 總案例	Eval set	人工			
-P90 Latency	性能-定量	90 分位耗時	Tracing / Logs	監控			
-Cost per Query	成本-定量	總成本 / 請求數	Billing / Logs	統計			
+4. Metrics Table
+
+Metric Name       Type               Definition / Formula         Data Source      Eval Method         Target    Redline   Owner
+Accuracy          Effectiveness      Correct / Total              Eval set         Automated / Human
+Relevance         Experience         Avg score 1–5               Sampled outputs  LLM Judge + Human
+Completeness      Experience         Avg score 1–5               Sampled outputs  LLM Judge + Human
+Hallucination Rate Risk              Hallucinated cases / Total   Eval set         Human review
+P90 Latency       Performance        90th-percentile response time  Tracing / Logs  Monitoring
+Cost per Query    Cost               Total cost / Request count   Billing / Logs   Statistics
+
 5. Guardrail Metrics
 
-這些指標即使主指標提升，也不能變差太多。
+These metrics must not regress even if primary metrics improve.
 
-指標	目前值	可接受範圍	備註
-幻覺率			
-高風險錯誤率			
-P90 latency			
-Cost per query			
-6. Eval Dataset 設計
+Metric               Current Value    Acceptable Range    Notes
+Hallucination Rate
+High-Risk Error Rate
+P90 Latency
+Cost per Query
 
-資料來源：
+6. Eval Dataset Design
 
- 真實用戶日誌
+Data Sources:
 
- 人工構造案例
+☐ Real user logs
+☐ Manually constructed cases
+☐ Historical bad cases
+☐ Open-source benchmark
 
- 歷史 bad cases
+Dataset Description:
 
- 開源 benchmark
+Total samples:
 
-資料集說明：
+High-frequency scenario share:
 
-總樣本數：
+High-value scenario share:
 
-高頻場景占比：
+High-risk scenario share:
 
-高價值場景占比：
+Long-tail scenario share:
 
-高風險場景占比：
+Sampling Principle:
+Describe how cases are selected to avoid cherry-picking easy examples.
 
-長尾場景占比：
+Exclusion Criteria:
+Which cases are excluded from this eval and why.
 
-抽樣原則：
-填寫如何抽樣，避免只挑容易題。
+7. Evaluation Methods
+7.1 Offline Evaluation
 
-排除條件：
-哪些 case 不納入這次評測。
+Dataset used:
 
-7. 評測方法
-7.1 離線評測
+Version under evaluation:
 
-使用資料集：
+Comparison baseline:
 
-評測版本：
+Evaluation date:
 
-比較對象：
-
-評測時間：
-
-輸出結果：
+Output artifacts:
 
 7.2 LLM Judge
 
-Judge model：
+Judge model:
 
-評分維度：
+Scoring dimensions:
 
-Prompt 版本：
+Prompt version:
 
-抽樣數量：
+Sample size:
 
-驗證方式：
+Validation method:
 
-7.3 人工評測
+7.3 Human Review
 
-評分人：
+Reviewers:
 
-評分標準文件：
+Scoring rubric document:
 
-抽樣數量：
+Sample size:
 
-複核方式：
+Cross-check method:
 
-7.4 線上 A/B
+7.4 Online A/B Test
 
-實驗目標：
+Experiment goal:
 
-對照組：
+Control group:
 
-實驗組：
+Treatment group:
 
-流量比例：
+Traffic split:
 
-觀察週期：
+Observation window:
 
-決策條件：
+Decision criteria:
 
-7.5 上線後監控
+7.5 Post-Launch Monitoring
 
-Dashboard 連結：
+Dashboard link:
 
-每日追蹤指標：
+Daily tracked metrics:
 
-告警條件：
+Alert conditions:
 
-回滾條件：
+Rollback conditions:
 
-8. 評分指南
-Relevance（相關性）
+8. Scoring Rubric
+Relevance
 
-5 分： 直接回答問題，且內容高度相關
-4 分： 基本回答到點，但略有冗餘
-3 分： 部分相關，但未抓到核心
-2 分： 明顯偏題
-1 分： 完全未回答問題
+5 — Directly answers the question with highly relevant content
+4 — Mostly on point but with minor redundancy
+3 — Partially relevant; misses the core intent
+2 — Mostly off-topic
+1 — Completely fails to address the question
 
-Completeness（完整度）
+Completeness
 
-5 分： 核心資訊完整，沒有缺漏
-4 分： 主要都有，但缺次要資訊
-3 分： 有明顯漏項
-2 分： 嚴重不完整
-1 分： 幾乎不可用
+5 — All key information present, nothing missing
+4 — Covers main points; minor secondary items missing
+3 — Notable gaps in expected content
+2 — Severely incomplete
+1 — Unusable
 
-Hallucination（幻覺）
+Hallucination
 
-Pass： 沒有編造，內容有依據
-Fail： 有任意關鍵事實編造、錯引、亂補
+Pass — No fabrication; all claims are grounded
+Fail — Any key fact is invented, misattributed, or fabricated
 
-9. 結果總結
-指標	Baseline	New Version	Diff	是否達標
-Accuracy				
-Relevance				
-Completeness				
-Hallucination Rate				
-P90 Latency				
-Cost per Query				
+9. Results Summary
 
-總結：
-這次版本相較於 baseline 的主要提升與退化。
+Metric               Baseline    New Version    Diff    Pass?
+Accuracy
+Relevance
+Completeness
+Hallucination Rate
+P90 Latency
+Cost per Query
 
-10. 錯誤分析
+Summary:
+Primary improvements and regressions relative to baseline.
 
-主要錯誤類型：
+10. Error Analysis
+
+Main Error Types:
 1.
 2.
 3.
 
-代表案例：
+Representative Cases:
 
-Case 1：
+Case 1:
 
-Case 2：
+Case 2:
 
-Case 3：
+Case 3:
 
-根因判斷：
+Root Cause Assessment:
 
- 模型能力不足
+☐ Model capability gap
+☐ Prompt issue
+☐ RAG retrieval failure
+☐ Tool call failure
+☐ Data quality issue
+☐ Insufficient monitoring
 
- Prompt 問題
+11. Iteration Plan
 
- RAG 檢索錯誤
+Issue    Root Cause    Fix    Priority    Owner    Deadline
+                              P0/P1/P2
 
- Tool call 問題
+12. Release Decision
 
- 資料品質問題
+Result:
 
- 監控不足
+☐ Approved — ready for production
+☐ Approved — ready for canary / shadow mode
+☐ Rejected — requires fixes and re-evaluation
+☐ Blocked
 
-11. 迭代方案
-問題	根因	解法	優先級	Owner	截止時間
-			P0/P1/P2		
-12. 發布決策
-
-結果：
-
- 通過，可上線
-
- 通過，可灰度
-
- 不通過，需修正後重測
-
- Blocked
-
-決策理由：
-下一步：
-下次重測時間：
+Decision Rationale:
+Next Steps:
+Next Re-evaluation Date:

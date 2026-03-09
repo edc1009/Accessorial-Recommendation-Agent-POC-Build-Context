@@ -2,82 +2,11 @@
 // Runs the rules engine against test-dataset.json and prints Precision/Recall/F1
 
 import { readFileSync } from 'fs';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { evaluateRules } from '../src/engine/rules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// ── Inline rules engine (copied from src/engine/rules.js) ──────────────────
-
-const LIMITED_ACCESS_LOCATIONS = [
-    'school', 'church', 'hospital', 'military_base', 'prison',
-    'construction_site', 'mine', 'storage_unit',
-];
-
-function evaluateRules(input) {
-    const {
-        consignee_type,
-        location_type,
-        package_type,
-        total_weight_lbs: weight,
-        handling_units,
-        dock_available,
-    } = input;
-
-    const effectivePkg = package_type === 'crated' ? 'palletized' : package_type;
-    const isResidential = consignee_type === 'residential';
-    const hasWeight = weight != null && weight > 0;
-
-    const matches = [];
-
-    if (hasWeight) {
-        if (weight >= 300 && effectivePkg === 'loose' && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.95, rule: 'L1' });
-
-        if (weight >= 300 && effectivePkg === 'loose' && dock_available === 'unknown')
-            matches.push({ accessorial: 'liftgate', confidence: 0.80, rule: 'L2' });
-
-        if (weight >= 500 && effectivePkg === 'palletized' && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.92, rule: 'L3' });
-
-        if (weight >= 500 && effectivePkg === 'palletized' && dock_available === 'unknown')
-            matches.push({ accessorial: 'liftgate', confidence: 0.75, rule: 'L4' });
-
-        if (weight >= 150 && effectivePkg === 'loose' && dock_available === 'no' && isResidential)
-            matches.push({ accessorial: 'liftgate', confidence: 0.93, rule: 'L5' });
-
-        if (weight >= 100 && isResidential && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.70, rule: 'L6' });
-    }
-
-    if (consignee_type === 'residential')
-        matches.push({ accessorial: 'residential_delivery', confidence: 0.95, rule: 'R1' });
-
-    if (location_type === 'home' || location_type === 'apartment')
-        matches.push({ accessorial: 'residential_delivery', confidence: 0.95, rule: 'R2' });
-
-    if (LIMITED_ACCESS_LOCATIONS.includes(location_type))
-        matches.push({ accessorial: 'limited_access', confidence: 0.90, rule: 'A1' });
-
-    if (location_type === 'mall')
-        matches.push({ accessorial: 'limited_access', confidence: 0.85, rule: 'A2' });
-
-    if (location_type === 'government_building')
-        matches.push({ accessorial: 'limited_access', confidence: 0.82, rule: 'A3' });
-
-    if (isResidential && handling_units >= 3)
-        matches.push({ accessorial: 'limited_access', confidence: 0.60, rule: 'A4' });
-
-    // Deduplicate: keep highest confidence per accessorial
-    const best = {};
-    for (const m of matches) {
-        if (!best[m.accessorial] || m.confidence > best[m.accessorial].confidence)
-            best[m.accessorial] = m;
-    }
-
-    return Object.values(best);
-}
 
 // ── Load test dataset ──────────────────────────────────────────────────────
 
@@ -96,7 +25,7 @@ const perTypeStats = {};
 for (const t of ACCESSORIAL_TYPES) perTypeStats[t] = { tp: 0, fp: 0, fn: 0 };
 
 for (const tc of dataset) {
-    const recs = evaluateRules(tc.input);
+    const { recommendations: recs } = evaluateRules(tc.input);
     const actual = recs.map(r => r.accessorial).sort();
     const expected = [...(tc.expected.accessorials || [])].sort();
 

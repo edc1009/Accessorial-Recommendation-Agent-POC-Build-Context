@@ -2,9 +2,9 @@
 // L1 (Format) + L2 (Guardrail) eval for AI layer
 // Usage: node eval/run_ai_eval.mjs YOUR_API_KEY
 
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { evaluateRules } from '../src/engine/rules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const API_KEY = process.argv[2];
@@ -13,101 +13,38 @@ if (!API_KEY) {
     process.exit(1);
 }
 
-// ── Inline rules engine ────────────────────────────────────────────────────
-
-const LIMITED_ACCESS_LOCATIONS = [
-    'school', 'church', 'hospital', 'military_base', 'prison',
-    'construction_site', 'mine',
-];
-
-function evaluateRules(input) {
-    const {
-        consignee_type, location_type, package_type,
-        total_weight_lbs: weight, handling_units, dock_available,
-    } = input;
-    const effectivePkg = package_type === 'crated' ? 'palletized' : package_type;
-    const isResidential = consignee_type === 'residential';
-    const hasWeight = weight != null && weight > 0;
-    const matches = [];
-    let rulesEvaluated = 0;
-
-    if (hasWeight) {
-        rulesEvaluated++;
-        if (weight >= 300 && effectivePkg === 'loose' && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.95, rule: 'L1' });
-        rulesEvaluated++;
-        if (weight >= 300 && effectivePkg === 'loose' && dock_available === 'unknown')
-            matches.push({ accessorial: 'liftgate', confidence: 0.80, rule: 'L2' });
-        rulesEvaluated++;
-        if (weight >= 500 && effectivePkg === 'palletized' && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.92, rule: 'L3' });
-        rulesEvaluated++;
-        if (weight >= 500 && effectivePkg === 'palletized' && dock_available === 'unknown')
-            matches.push({ accessorial: 'liftgate', confidence: 0.75, rule: 'L4' });
-        rulesEvaluated++;
-        if (weight >= 150 && effectivePkg === 'loose' && dock_available === 'no' && isResidential)
-            matches.push({ accessorial: 'liftgate', confidence: 0.93, rule: 'L5' });
-        rulesEvaluated++;
-        if (weight >= 100 && isResidential && dock_available === 'no')
-            matches.push({ accessorial: 'liftgate', confidence: 0.70, rule: 'L6' });
-    }
-    if (hasWeight) rulesEvaluated++;
-
-    rulesEvaluated++;
-    if (consignee_type === 'residential')
-        matches.push({ accessorial: 'residential_delivery', confidence: 0.95, rule: 'R1' });
-    rulesEvaluated++;
-    if (location_type === 'home' || location_type === 'apartment')
-        matches.push({ accessorial: 'residential_delivery', confidence: 0.95, rule: 'R2' });
-    rulesEvaluated++;
-    if (LIMITED_ACCESS_LOCATIONS.includes(location_type))
-        matches.push({ accessorial: 'limited_access', confidence: 0.90, rule: 'A1' });
-    rulesEvaluated++;
-    if (location_type === 'mall')
-        matches.push({ accessorial: 'limited_access', confidence: 0.85, rule: 'A2' });
-    rulesEvaluated++;
-    if (location_type === 'government_building')
-        matches.push({ accessorial: 'limited_access', confidence: 0.82, rule: 'A3' });
-    rulesEvaluated++;
-    if (isResidential && handling_units >= 3)
-        matches.push({ accessorial: 'limited_access', confidence: 0.60, rule: 'A4' });
-
-    const best = {};
-    for (const m of matches) {
-        if (!best[m.accessorial] || m.confidence > best[m.accessorial].confidence)
-            best[m.accessorial] = m;
-    }
-
-    const recommendations = Object.values(best).map(m => ({
-        accessorial: m.accessorial, confidence: m.confidence,
-        level: m.confidence >= 0.85 ? 'recommended' : 'review_suggested',
-        source: 'rules', explanation: `Rule ${m.rule} fired.`, rule: m.rule,
-    }));
-
-    return { recommendations, advisories: [], meta: { rules_evaluated: rulesEvaluated, rules_fired: matches.length, ai_invoked: false, ai_tasks: [] } };
-}
-
 // ── Near-threshold detection ───────────────────────────────────────────────
 
 function detectNearThresholdSignals(input) {
-    const { total_weight_lbs: weight, package_type, dock_available, consignee_type, location_type } = input;
-    const effectivePkg = package_type === 'crated' ? 'palletized' : package_type;
+    const { total_weight_lbs: weight, dock_available, forklift_available, consignee_type, location_type } = input;
+    const normalize = v => (v == null ? 'unknown' : String(v).trim().toLowerCase());
     const signals = [];
-    if (weight != null) {
-        if (effectivePkg === 'loose' && weight >= 255 && weight <= 299) signals.push(`Weight near loose threshold`);
-        if (effectivePkg === 'palletized' && weight >= 425 && weight <= 499) signals.push(`Weight near palletized threshold`);
-        if (dock_available === 'unknown' && weight > 200) signals.push(`Dock unknown on ${weight} lb shipment`);
+
+    // Both unload signals unknown on a notable shipment
+    if (normalize(dock_available) === 'unknown' && normalize(forklift_available) === 'unknown' && weight > 100) {
+        signals.push(`Both dock and forklift availability unknown on ${weight} lb shipment`);
     }
-    if (consignee_type === 'unknown' && location_type === 'other') signals.push('Both consignee and location unknown');
+
+    // Destination type completely ambiguous
+    if (normalize(consignee_type) === 'unknown' &&
+        (normalize(location_type) === 'other' || normalize(location_type) === 'unknown')) {
+        signals.push('Consignee type and location type both unknown');
+    }
+
     return signals;
 }
 
 function classifyCase(rulesResult, nearThresholdSignals) {
-    const { recommendations } = rulesResult;
+    const { recommendations, advisories } = rulesResult;
     const tasks = [];
+
     if (recommendations.length > 1) tasks.push('task1_explanation_refinement');
     if (recommendations.some(r => r.confidence >= 0.5 && r.confidence < 0.85)) tasks.push('task2_ambiguity_review');
-    if (recommendations.length === 0 && nearThresholdSignals.length > 0) tasks.push('task3_advisory_generation');
+    // Task 3: fires on rules-generated advisories OR near-threshold signals with no recommendations
+    if (advisories.length > 0 || (recommendations.length === 0 && nearThresholdSignals.length > 0)) {
+        tasks.push('task3_advisory_generation');
+    }
+
     return tasks;
 }
 
@@ -155,56 +92,65 @@ async function callAI(input, rulesOutput, tasks) {
 }
 
 // ── Test cases designed to trigger AI ──────────────────────────────────────
+// All inputs use v2 rules fields (forklift_available, etc.)
 
 const AI_TEST_CASES = [
     {
         id: 'AI-001',
-        name: 'Task 2: Ambiguous liftgate (palletized, dock unknown)',
+        name: 'Task 2: Ambiguous liftgate (no dock, no forklift, commercial)',
         expect_ai: true,
         expect_tasks: ['task2_ambiguity_review'],
-        input: { consignee_type: 'commercial', location_type: 'retail_store', package_type: 'palletized', total_weight_lbs: 600, handling_units: 1, dock_available: 'unknown' },
+        // liftgate score: dockNo(+0.35) + forkliftNo(+0.30) + loose>=150(+0.15) = 0.80 → review_suggested
+        input: { consignee_type: 'commercial', location_type: 'warehouse', package_type: 'loose', total_weight_lbs: 200, handling_units: 1, dock_available: 'no', forklift_available: 'no' },
     },
     {
         id: 'AI-002',
-        name: 'Task 1+2: Multi-rule + ambiguity (gov building + heavy loose)',
+        name: 'Task 1+2: Multiple recommendations + ambiguity (hospital + liftgate)',
         expect_ai: true,
         expect_tasks: ['task1_explanation_refinement', 'task2_ambiguity_review'],
-        input: { consignee_type: 'commercial', location_type: 'government_building', package_type: 'loose', total_weight_lbs: 350, handling_units: 2, dock_available: 'no' },
+        // limited_access(0.82) + liftgate(0.80) → both < 0.85 → Task 2; 2 recs → Task 1
+        input: { consignee_type: 'commercial', location_type: 'hospital', package_type: 'loose', total_weight_lbs: 200, handling_units: 1, dock_available: 'no', forklift_available: 'no' },
     },
     {
         id: 'AI-003',
-        name: 'Task 3: Near-threshold advisory (palletized 480 lbs, dock unknown)',
+        name: 'Task 3: Advisory from rules (residential, unload equipment unknown)',
         expect_ai: true,
         expect_tasks: ['task3_advisory_generation'],
-        input: { consignee_type: 'commercial', location_type: 'warehouse', package_type: 'palletized', total_weight_lbs: 480, handling_units: 1, dock_available: 'unknown' },
+        // residential_delivery(0.95 recommended); liftgate score too low → no liftgate rec
+        // advisories: liftgate_review + delivery_complexity → Task 3
+        input: { consignee_type: 'residential', location_type: 'home', package_type: 'palletized', total_weight_lbs: 200, handling_units: 4, dock_available: 'unknown', forklift_available: 'unknown' },
     },
     {
         id: 'AI-004',
-        name: 'Task 3: Unknown address, moderate weight',
+        name: 'Task 3: Near-threshold (unknown destination, both dock and forklift unknown)',
         expect_ai: true,
         expect_tasks: ['task3_advisory_generation'],
-        input: { consignee_type: 'unknown', location_type: 'other', package_type: 'loose', total_weight_lbs: 220, handling_units: 1, dock_available: 'unknown' },
+        // No recommendations; detectNearThresholdSignals fires (both unknown + weight > 100) → Task 3
+        input: { consignee_type: 'unknown', location_type: 'other', package_type: 'loose', total_weight_lbs: 220, handling_units: 1, dock_available: 'unknown', forklift_available: 'unknown' },
     },
     {
         id: 'AI-005',
-        name: 'No AI: High confidence residential + liftgate',
+        name: 'No AI: High confidence residential delivery (dock + forklift available)',
         expect_ai: false,
         expect_tasks: [],
-        input: { consignee_type: 'residential', location_type: 'home', package_type: 'loose', total_weight_lbs: 450, handling_units: 2, dock_available: 'no' },
+        // residential_delivery(0.95 recommended); liftgate suppressed (dockYes+forkliftYes); no advisories
+        input: { consignee_type: 'residential', location_type: 'home', package_type: 'palletized', total_weight_lbs: 300, handling_units: 1, dock_available: 'yes', forklift_available: 'yes' },
     },
     {
         id: 'AI-006',
-        name: 'No AI: Clean commercial warehouse',
+        name: 'No AI: Clean commercial warehouse with dock and forklift',
         expect_ai: false,
         expect_tasks: [],
-        input: { consignee_type: 'commercial', location_type: 'warehouse', package_type: 'palletized', total_weight_lbs: 1200, handling_units: 2, dock_available: 'yes' },
+        // No recommendations (liftgate suppressed, not residential, warehouse not limited_access); no advisories
+        input: { consignee_type: 'commercial', location_type: 'warehouse', package_type: 'palletized', total_weight_lbs: 1200, handling_units: 2, dock_available: 'yes', forklift_available: 'yes' },
     },
     {
         id: 'AI-007',
         name: 'Degradation: Bad API key should fallback gracefully',
         expect_ai: true,
         expect_tasks: ['task3_advisory_generation'],
-        input: { consignee_type: 'unknown', location_type: 'other', package_type: 'palletized', total_weight_lbs: 450, handling_units: 1, dock_available: 'unknown' },
+        // Same trigger as AI-004; bad key causes graceful failure
+        input: { consignee_type: 'unknown', location_type: 'other', package_type: 'palletized', total_weight_lbs: 450, handling_units: 1, dock_available: 'unknown', forklift_available: 'unknown' },
         use_bad_key: true,
     },
 ];
@@ -232,7 +178,6 @@ async function runTest(tc) {
     }
 
     // Call AI
-    const savedKey = API_KEY;
     const aiResult = tc.use_bad_key
         ? await callAI(tc.input, rulesResult, aiTasks, 'sk-bad-key-12345')
         : await callAI(tc.input, rulesResult, aiTasks);
